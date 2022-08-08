@@ -65,6 +65,9 @@ public class PCSCaseStudyCLI implements IApplication {
             .required()
             .desc("Name of result file (has to end with \".csv\")")
             .build();
+        
+        final Option scenarioOption = Option.builder("u").argName("usageScenario").desc("Name of the targeted Usage Scenario").build();
+        
         final Option stackLimitOption = Option.builder("s")
             .argName("stack limit")
             .hasArg()
@@ -73,6 +76,7 @@ public class PCSCaseStudyCLI implements IApplication {
         options.addOption(helpOption)
             .addOption(folderOption)
             .addOption(resultOption)
+            .addOption(scenarioOption)
             .addOption(stackLimitOption);
 
         // parse command line
@@ -111,10 +115,10 @@ public class PCSCaseStudyCLI implements IApplication {
                     "The given " + resultOption.getArgName() + " has to end with \".csv\".");
         }
         
-        Optional<String> stackLimit = Optional.ofNullable(commandLine.getOptionValue(stackLimitOption.getOpt()));
+        Optional<String> scenario = Optional.ofNullable(commandLine.getOptionValue(scenarioOption.getOpt()));
 
         // create run action
-        return createRunAction(scenarioFolder, resultFile, stackLimit);
+        return createRunAction(scenarioFolder, resultFile, scenario);
     }
 
     protected Callable<Integer> createHelpAction(Options options, PrintStream ps) {
@@ -138,7 +142,7 @@ public class PCSCaseStudyCLI implements IApplication {
         }
     }
 
-    protected Callable<Integer> createRunAction(File scenarioFolder, File resultFile, Optional<String> stackLimit) {
+    protected Callable<Integer> createRunAction(File scenarioFolder, File resultFile, Optional<String> scenario) {
         return () -> {
             try {
                 // initialization
@@ -155,8 +159,8 @@ public class PCSCaseStudyCLI implements IApplication {
                 // build and run job
                 var jobBuilder = CaseStudyWorkflowBuilder.builder()
                     .casesFolder(scenarioFolder)
-                    .resultFile(resultFile);
-                stackLimit.ifPresent(s -> jobBuilder.stackLimit(s));
+                    .resultFile(resultFile)
+                    .scenario(scenario.isEmpty() ? null : scenario.get());
                 var job = jobBuilder
                     .build();
                 var workflow = new Workflow(job);

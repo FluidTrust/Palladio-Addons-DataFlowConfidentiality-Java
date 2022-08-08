@@ -25,6 +25,7 @@ import org.palladiosimulator.pcm.usagemodel.Stop
 import org.palladiosimulator.pcm.usagemodel.UsageModel
 import java.util.Collections
 import edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.analysis.dto.ActionSequence
+import org.palladiosimulator.pcm.usagemodel.UsageScenario
 
 class ActionSequenceFinderImpl {
 	
@@ -37,6 +38,15 @@ class ActionSequenceFinderImpl {
 			val startAction = usageScenario.scenarioBehaviour_UsageScenario.actions_ScenarioBehaviour.filter(Start).findFirst[true]
 			actionSequences += Collections.unmodifiableCollection(startAction.findActionSequencesForUserAction(#[]))
 		}
+		Collections.unmodifiableCollection(actionSequences.map[sequence|new ActionSequence(sequence)])
+	}
+	
+	def findActionSequencesForUsageModel(UsageScenario usageScenario) {
+		val actionSequences = new ArrayList
+		
+			val startAction = usageScenario.scenarioBehaviour_UsageScenario.actions_ScenarioBehaviour.filter(Start).findFirst[true]
+			actionSequences += Collections.unmodifiableCollection(startAction.findActionSequencesForUserAction(#[]))
+		
 		Collections.unmodifiableCollection(actionSequences.map[sequence|new ActionSequence(sequence)])
 	}
 	

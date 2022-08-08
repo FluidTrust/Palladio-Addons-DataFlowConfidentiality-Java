@@ -3,6 +3,7 @@ package edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.application.jobs;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -13,6 +14,7 @@ import org.palladiosimulator.dataflow.dictionary.characterized.DataDictionaryCha
 import org.palladiosimulator.pcm.allocation.Allocation;
 import org.palladiosimulator.pcm.seff.SetVariableAction;
 import org.palladiosimulator.pcm.usagemodel.UsageModel;
+import org.palladiosimulator.pcm.usagemodel.UsageScenario;
 
 import de.uka.ipd.sdq.workflow.jobs.AbstractBlackboardInteractingJob;
 import de.uka.ipd.sdq.workflow.jobs.CleanupFailedException;
@@ -33,13 +35,15 @@ public class RunJavaBasedAnalysisJob extends AbstractBlackboardInteractingJob<Ke
     private final ModelLocation allocationModelLocation;
     private final String allCharacteristicsResultKey;
     private final String violationResultKey;
+    private final String scenario;
 
     public RunJavaBasedAnalysisJob(ModelLocation usageModelLocation, ModelLocation allocationModelLocation,
-            String allCharacteristicsResultKey, String violationResultKey) {
+            String allCharacteristicsResultKey, String violationResultKey, String scenario) {
         this.usageModelLocation = usageModelLocation;
         this.allocationModelLocation = allocationModelLocation;
         this.allCharacteristicsResultKey = allCharacteristicsResultKey;
         this.violationResultKey = violationResultKey;
+        this.scenario = scenario;
     }
 
     @Override
@@ -158,7 +162,13 @@ public class RunJavaBasedAnalysisJob extends AbstractBlackboardInteractingJob<Ke
 
     private CharacteristicsQueryEngine createQueryEngine(UsageModel usageModel, Allocation allocationModel) {
         var actionSequenceFinder = new ActionSequenceFinderImpl();
-        var actionSequences = actionSequenceFinder.findActionSequencesForUsageModel(usageModel);
+        
+        Optional<UsageScenario> scenario = Optional.empty();
+        if(this.scenario != null) {
+        	scenario = usageModel.getUsageScenario_UsageModel().stream().filter(e-> e.getEntityName().equals(this.scenario)).findAny();
+        }
+        
+        var actionSequences = scenario.isEmpty() ? actionSequenceFinder.findActionSequencesForUsageModel(usageModel) : actionSequenceFinder.findActionSequencesForUsageModel(scenario.get());
         var characteristicsCalculator = new CharacteristicsCalculator(allocationModel);
         var queryEngine = new CharacteristicsQueryEngine(characteristicsCalculator, actionSequences);
         return queryEngine;

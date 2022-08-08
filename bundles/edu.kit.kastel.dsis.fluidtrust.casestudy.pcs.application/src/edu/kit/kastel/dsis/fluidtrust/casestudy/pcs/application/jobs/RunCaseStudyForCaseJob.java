@@ -24,13 +24,13 @@ public class RunCaseStudyForCaseJob extends AbstractBlackboardInteractingJob<Ana
     protected final File usageModel;
     protected final File allocationModel;
     protected final File directory;
-    protected final String stackLimit;
+    protected final String scenario;
 
-    public RunCaseStudyForCaseJob(File usageModel, File allocationModel, String stackLimit) {
+    public RunCaseStudyForCaseJob(File usageModel, File allocationModel, String scenario) {
         this.usageModel = usageModel;
         this.allocationModel = allocationModel;
         this.directory = usageModel.getParentFile();
-        this.stackLimit = stackLimit;
+        this.scenario = scenario;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class RunCaseStudyForCaseJob extends AbstractBlackboardInteractingJob<Ana
         var loadUsageModelJob = new LoadModelJob<KeyValueMDSDBlackboard>(Arrays.asList(usageModelLocation, allocationLocation));
         job.add(loadUsageModelJob);
         
-        var runAnalysisJob = new RunJavaBasedAnalysisJob(usageModelLocation, allocationLocation, ALL_CHARACTERISTICS_RESULT_KEY, VIOLATIONS_RESULT_KEY);
+        var runAnalysisJob = new RunJavaBasedAnalysisJob(usageModelLocation, allocationLocation, ALL_CHARACTERISTICS_RESULT_KEY, VIOLATIONS_RESULT_KEY, this.scenario);
         job.add(runAnalysisJob);
 
         var allCharacteristicsResultFile = new File(directory, "allCharacteristics.json");

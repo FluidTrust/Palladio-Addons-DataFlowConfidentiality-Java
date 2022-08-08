@@ -19,6 +19,7 @@ public class CaseStudyWorkflowBuilder {
 
     private File resultFile;
     private File casesFolder;
+    private String scenario;
     private String stackLimit;
 
     private CaseStudyWorkflowBuilder() {
@@ -38,6 +39,11 @@ public class CaseStudyWorkflowBuilder {
         this.casesFolder = casesFolder;
         return this;
     }
+    
+    public CaseStudyWorkflowBuilder scenario(String scenario) {
+        this.scenario = scenario;
+        return this;
+    }
 
     public IJob build() throws IOException {
         // build overall job sequence
@@ -48,7 +54,7 @@ public class CaseStudyWorkflowBuilder {
         // add case execution jobs
         var caseDTOs = findCasesInDirectory();
         for (CaseDTO caseDTO : caseDTOs) {
-            job.add(new RunCaseStudyForCaseJob(caseDTO.getUsageModel(), caseDTO.getAllocationModel(), stackLimit));
+            job.add(new RunCaseStudyForCaseJob(caseDTO.getUsageModel(), caseDTO.getAllocationModel(), this.scenario));
         }
 
         // add analysis result to CSV job
