@@ -66,7 +66,7 @@ public class PCSCaseStudyCLI implements IApplication {
             .desc("Name of result file (has to end with \".csv\")")
             .build();
         
-        final Option scenarioOption = Option.builder("u").argName("usageScenario").desc("Name of the targeted Usage Scenario").build();
+        final Option scenarioOption = Option.builder("u").argName("usageScenario").hasArg().desc("Name of the targeted Usage Scenario").build();
         
         final Option stackLimitOption = Option.builder("s")
             .argName("stack limit")

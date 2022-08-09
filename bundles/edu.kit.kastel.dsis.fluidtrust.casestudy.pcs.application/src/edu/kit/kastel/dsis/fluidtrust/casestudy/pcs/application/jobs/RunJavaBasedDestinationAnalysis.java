@@ -29,7 +29,7 @@ import edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.analysis.dto.ActionBasedQuer
 import edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.analysis.dto.CharacteristicValue;
 import edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.application.query.AccessControlPolicy;
 
-public class RunJavaBasedAnalysisJob extends AbstractBlackboardInteractingJob<KeyValueMDSDBlackboard> {
+public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteractingJob<KeyValueMDSDBlackboard> {
 
     private final ModelLocation usageModelLocation;
     private final ModelLocation allocationModelLocation;
@@ -37,7 +37,7 @@ public class RunJavaBasedAnalysisJob extends AbstractBlackboardInteractingJob<Ke
     private final String violationResultKey;
     private final String scenario;
 
-    public RunJavaBasedAnalysisJob(ModelLocation usageModelLocation, ModelLocation allocationModelLocation,
+    public RunJavaBasedDestinationAnalysis(ModelLocation usageModelLocation, ModelLocation allocationModelLocation,
             String allCharacteristicsResultKey, String violationResultKey, String scenario) {
         this.usageModelLocation = usageModelLocation;
         this.allocationModelLocation = allocationModelLocation;
@@ -77,20 +77,20 @@ public class RunJavaBasedAnalysisJob extends AbstractBlackboardInteractingJob<Ke
 
     private ActionBasedQueryResult findViolations(List<PCMDataDictionary> dataDictionaries, ActionBasedQueryResult allCharacteristics) throws JobFailedException {
         var enumCharacteristicTypes = getAllEnumCharacteristicTypes(dataDictionaries);
-        var ctACObject = findByName(enumCharacteristicTypes, "Destination");//TODO fix
-        var ctAssignedRoles = findByName(enumCharacteristicTypes, "Userroles"); //TODO fix
-        var convertedPolicy = AccessControlPolicy.POLICY.keySet()
-            .stream()
-            .collect(Collectors.toMap(role -> ctAssignedRoles.getType()
-                .getLiterals()
-                .stream()
-                .filter(l -> l.getName()
-                    .equals(role.getName()))
-                .findFirst().get(),
-                    role -> AccessControlPolicy.POLICY.get(role)
-                        .stream()
-                        .map(obj -> ctACObject.getType().getLiterals().stream().filter(l -> l.getName().equals(obj.getName())).findFirst().get())
-                        .collect(Collectors.toSet())));
+        var ctACObject = findByName(enumCharacteristicTypes, "Destination");
+        var ctAssignedRoles = findByName(enumCharacteristicTypes, "Userroles");
+//        var convertedPolicy = AccessControlPolicy.POLICY.keySet()
+//            .stream()
+//            .collect(Collectors.toMap(role -> ctAssignedRoles.getType()
+//                .getLiterals()
+//                .stream()
+//                .filter(l -> l.getName()
+//                    .equals(role.getName()))
+//                .findFirst().get(),
+//                    role -> AccessControlPolicy.POLICY.get(role)
+//                        .stream()
+//                        .map(obj -> ctACObject.getType().getLiterals().stream().filter(l -> l.getName().equals(obj.getName())).findFirst().get())
+//                        .collect(Collectors.toSet())));
         
         var violations = new ActionBasedQueryResult();
         
@@ -111,15 +111,19 @@ public class RunJavaBasedAnalysisJob extends AbstractBlackboardInteractingJob<Ke
                     .filter(cv -> cv.getCharacteristicType() == ctACObject)
                     .map(CharacteristicValue::getCharacteristicLiteral)
                     .collect(Collectors.toList());
-
+                var action = (SetVariableAction) queryResult.getElement().getElement();
                 
-                var accessibleAcObjects = assignedRoles.stream()
-                    .map(convertedPolicy::get)
-                    .flatMap(Collection::stream)
-                    .collect(Collectors.toSet());
-                if (!accessibleAcObjects.containsAll(acObjects)) {
-                    violations.addResult(resultEntry.getKey(), queryResult);
+                if(action.getEntityName().equals("virtualInspection") && acObjects.stream().anyMatch(e-> e.getName().equals("Columbia"))) {
+                	violations.addResult(resultEntry.getKey(),queryResult);
                 }
+                
+//                var accessibleAcObjects = assignedRoles.stream()
+//                    .map(convertedPolicy::get)
+//                    .flatMap(Collection::stream)
+//                    .collect(Collectors.toSet());
+//                if (!accessibleAcObjects.containsAll(acObjects)) {
+//                    violations.addResult(resultEntry.getKey(), queryResult);
+//                }
                 
                 
             }
