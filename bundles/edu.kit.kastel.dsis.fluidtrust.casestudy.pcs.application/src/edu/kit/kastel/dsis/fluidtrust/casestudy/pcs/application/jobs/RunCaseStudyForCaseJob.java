@@ -2,6 +2,9 @@ package edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.application.jobs;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.common.util.URI;
@@ -25,12 +28,14 @@ public class RunCaseStudyForCaseJob extends AbstractBlackboardInteractingJob<Ana
     protected final File allocationModel;
     protected final File directory;
     protected final String scenario;
+    private final Map<String, String> variables;
 
-    public RunCaseStudyForCaseJob(File usageModel, File allocationModel, String scenario) {
+    public RunCaseStudyForCaseJob(File usageModel, File allocationModel, String scenario,String[] variables) {
         this.usageModel = usageModel;
         this.allocationModel = allocationModel;
         this.directory = usageModel.getParentFile();
         this.scenario = scenario;
+        this.variables = createVariableMap(variables);
     }
 
     @Override
@@ -46,7 +51,7 @@ public class RunCaseStudyForCaseJob extends AbstractBlackboardInteractingJob<Ana
         var loadUsageModelJob = new LoadModelJob<KeyValueMDSDBlackboard>(Arrays.asList(usageModelLocation, allocationLocation));
         job.add(loadUsageModelJob);
         
-        var runAnalysisJob = new RunJavaBasedDestinationAnalysis(usageModelLocation, allocationLocation, ALL_CHARACTERISTICS_RESULT_KEY, VIOLATIONS_RESULT_KEY, this.scenario);
+        var runAnalysisJob = new RunJavaBasedDestinationAnalysis(usageModelLocation, allocationLocation, ALL_CHARACTERISTICS_RESULT_KEY, VIOLATIONS_RESULT_KEY, this.scenario, variables);
         job.add(runAnalysisJob);
 
         var allCharacteristicsResultFile = new File(directory, "allCharacteristics.json");
@@ -79,6 +84,21 @@ public class RunCaseStudyForCaseJob extends AbstractBlackboardInteractingJob<Ana
     @Override
     public String getName() {
         return "Analysis run for " + directory.getName();
+    }
+    
+    private Map<String, String> createVariableMap(String[] variables){
+    	
+    	
+    	return variables== null ? new HashMap<>() : Arrays.stream(variables).collect(Collectors.toMap(this::getKey, this::getMap));
+    	
+    	
+    	
+    }
+    private String getKey(String variable) {
+    	return variable.split(":")[0];
+    }
+    private String getMap(String variable) {
+    	return variable.split(":")[1];
     }
 
 }

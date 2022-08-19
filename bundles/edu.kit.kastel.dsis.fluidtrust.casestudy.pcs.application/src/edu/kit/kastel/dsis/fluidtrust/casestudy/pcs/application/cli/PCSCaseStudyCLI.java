@@ -3,8 +3,10 @@ package edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.application.cli;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -73,11 +75,18 @@ public class PCSCaseStudyCLI implements IApplication {
             .hasArg()
             .desc("Stack size limit as specified for SWI Prolog.")
             .build();
+        
+        final Option characteristicOption = Option.builder("c").argName("characteristics").hasArgs().desc("Variable Characteristation in the format VARIABLE_NAME:VALUE").build();
+        
         options.addOption(helpOption)
             .addOption(folderOption)
             .addOption(resultOption)
             .addOption(scenarioOption)
-            .addOption(stackLimitOption);
+            .addOption(stackLimitOption)
+            .addOption(characteristicOption);
+        
+        
+        
 
         // parse command line
         final CommandLineParser parser = new DefaultParser();
@@ -116,9 +125,18 @@ public class PCSCaseStudyCLI implements IApplication {
         }
         
         Optional<String> scenario = Optional.ofNullable(commandLine.getOptionValue(scenarioOption.getOpt()));
+        
+        var variables = commandLine.getOptionValues(characteristicOption.getOpt());
+        
+        if(variables != null && !Arrays.stream(variables).allMatch(this::checkFormat)) {
+        	return createHelpAction(options, System.err,"The variables does not match the required format");
+        }
+        
+        
+        
 
         // create run action
-        return createRunAction(scenarioFolder, resultFile, scenario);
+        return createRunAction(scenarioFolder, resultFile, scenario, variables);
     }
 
     protected Callable<Integer> createHelpAction(Options options, PrintStream ps) {
@@ -142,7 +160,7 @@ public class PCSCaseStudyCLI implements IApplication {
         }
     }
 
-    protected Callable<Integer> createRunAction(File scenarioFolder, File resultFile, Optional<String> scenario) {
+    protected Callable<Integer> createRunAction(File scenarioFolder, File resultFile, Optional<String> scenario, String variables[]) {
         return () -> {
             try {
                 // initialization
@@ -160,7 +178,8 @@ public class PCSCaseStudyCLI implements IApplication {
                 var jobBuilder = CaseStudyWorkflowBuilder.builder()
                     .casesFolder(scenarioFolder)
                     .resultFile(resultFile)
-                    .scenario(scenario.isEmpty() ? null : scenario.get());
+                    .scenario(scenario.isEmpty() ? null : scenario.get())
+                    .variables(variables);
                 var job = jobBuilder
                     .build();
                 var workflow = new Workflow(job);
@@ -171,6 +190,11 @@ public class PCSCaseStudyCLI implements IApplication {
             }
             return 0;
         };
+    }
+    
+    private boolean checkFormat(String inputString) {
+    	var regex = "[\\p{javaLowerCase}\\p{javaUpperCase}]+:[\\p{javaLowerCase}\\p{javaUpperCase}\\p{Digit}]+";
+    	return Pattern.matches(regex, inputString);
     }
 
     @Override

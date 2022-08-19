@@ -20,7 +20,7 @@ public class CaseStudyWorkflowBuilder {
     private File resultFile;
     private File casesFolder;
     private String scenario;
-    private String stackLimit;
+    private String[] variables;
 
     private CaseStudyWorkflowBuilder() {
         // intentionally left blank
@@ -44,6 +44,11 @@ public class CaseStudyWorkflowBuilder {
         this.scenario = scenario;
         return this;
     }
+    
+    public CaseStudyWorkflowBuilder variables(String[] variables) {
+        this.variables = variables;
+        return this;
+    }
 
     public IJob build() throws IOException {
         // build overall job sequence
@@ -54,7 +59,7 @@ public class CaseStudyWorkflowBuilder {
         // add case execution jobs
         var caseDTOs = findCasesInDirectory();
         for (CaseDTO caseDTO : caseDTOs) {
-            job.add(new RunCaseStudyForCaseJob(caseDTO.getUsageModel(), caseDTO.getAllocationModel(), this.scenario));
+            job.add(new RunCaseStudyForCaseJob(caseDTO.getUsageModel(), caseDTO.getAllocationModel(), this.scenario, variables));
         }
 
         // add analysis result to CSV job
@@ -136,11 +141,6 @@ public class CaseStudyWorkflowBuilder {
             .sorted((d1, d2) -> d1.getDirectory()
                 .compareTo(d2.getDirectory()))
             .collect(Collectors.toList());
-    }
-
-    public CaseStudyWorkflowBuilder stackLimit(String stackLimit) {
-        this.stackLimit = stackLimit;
-        return this;
     }
 
 }
