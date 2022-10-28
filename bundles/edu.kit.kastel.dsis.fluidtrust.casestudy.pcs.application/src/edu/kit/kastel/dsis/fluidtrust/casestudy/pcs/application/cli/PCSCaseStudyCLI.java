@@ -110,7 +110,7 @@ public class PCSCaseStudyCLI implements IApplication {
         File scenarioFolder = new File(folderArgument).getAbsoluteFile();
         if (!scenarioFolder.isDirectory()) {
             return createHelpAction(options, System.err,
-                    "The given " + folderOption.getArgName() + " has to be an existing directory.");
+                    "The given " + folderOption.getArgName() + " has to be an existing directory." + folderArgument);
         }
 
         String resultArgument = commandLine.getOptionValue(resultOption.getOpt());
