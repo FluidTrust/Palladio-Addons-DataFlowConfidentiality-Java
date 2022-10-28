@@ -5,6 +5,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
@@ -131,7 +132,7 @@ public class PCSCaseStudyCLI implements IApplication {
         var variables = commandLine.getOptionValues(characteristicOption.getOpt());
         
         if(variables != null && !Arrays.stream(variables).allMatch(this::checkFormat)) {
-        	return createHelpAction(options, System.err,"The variables does not match the required format: InputString:" + variables);
+        	return createHelpAction(options, System.err,"The variables does not match the required format: InputString:" + String.join(",", variables));
         }
         
         
