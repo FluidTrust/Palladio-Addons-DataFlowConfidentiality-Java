@@ -82,7 +82,7 @@ public class PCSCaseStudyCLI implements IApplication {
         
         options.addOption(helpOption)
             .addOption(folderOption)
-            .addOption(resultOption)
+//            .addOption(resultOption)
             .addOption(scenarioOption)
             .addOption(stackLimitOption)
             .addOption(characteristicOption);
@@ -113,32 +113,32 @@ public class PCSCaseStudyCLI implements IApplication {
                     "The given " + folderOption.getArgName() + " has to be an existing directory." + folderArgument);
         }
 
-        String resultArgument = commandLine.getOptionValue(resultOption.getOpt());
-        File resultFile = new File(resultArgument).getAbsoluteFile();
-        if (!resultFile.getParentFile()
-            .isDirectory()) {
-            return createHelpAction(options, System.err,
-                    "The given " + resultOption.getArgName() + " has to be located in an existing directory.");
-        }
-        if (!resultFile.getName()
-            .endsWith(".csv")) {
-            return createHelpAction(options, System.err,
-                    "The given " + resultOption.getArgName() + " has to end with \".csv\". " + resultFile.getName());
-        }
+//        String resultArgument = commandLine.getOptionValue(resultOption.getOpt());
+//        File resultFile = new File(resultArgument).getAbsoluteFile();
+//        if (!resultFile.getParentFile()
+//            .isDirectory()) {
+//            return createHelpAction(options, System.err,
+//                    "The given " + resultOption.getArgName() + " has to be located in an existing directory.");
+//        }
+//        if (!resultFile.getName()
+//            .endsWith(".csv")) {
+//            return createHelpAction(options, System.err,
+//                    "The given " + resultOption.getArgName() + " has to end with \".csv\". " + resultFile.getName());
+//        }
         
         Optional<String> scenario = Optional.ofNullable(commandLine.getOptionValue(scenarioOption.getOpt()));
         
         var variables = commandLine.getOptionValues(characteristicOption.getOpt());
         
         if(variables != null && !Arrays.stream(variables).allMatch(this::checkFormat)) {
-        	return createHelpAction(options, System.err,"The variables does not match the required format");
+        	return createHelpAction(options, System.err,"The variables does not match the required format: InputString:" + variables);
         }
         
         
         
 
         // create run action
-        return createRunAction(scenarioFolder, resultFile, scenario, variables);
+        return createRunAction(scenarioFolder, /*resultFile*/ null, scenario, variables);
     }
 
     protected Callable<Integer> createHelpAction(Options options, PrintStream ps) {
