@@ -123,7 +123,7 @@ public class PCSCaseStudyCLI implements IApplication {
         if (!resultFile.getName()
             .endsWith(".csv")) {
             return createHelpAction(options, System.err,
-                    "The given " + resultOption.getArgName() + " has to end with \".csv\".");
+                    "The given " + resultOption.getArgName() + " has to end with \".csv\". " + resultFile.getName());
         }
         
         Optional<String> scenario = Optional.ofNullable(commandLine.getOptionValue(scenarioOption.getOpt()));
