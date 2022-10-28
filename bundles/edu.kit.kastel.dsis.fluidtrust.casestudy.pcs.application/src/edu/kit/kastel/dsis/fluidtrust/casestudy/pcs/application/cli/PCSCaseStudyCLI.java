@@ -30,6 +30,8 @@ import org.eclipse.xtext.resource.containers.ResourceSetBasedAllContainersStateP
 import org.palladiosimulator.dataflow.confidentiality.pcm.dddsl.DDDslStandaloneSetup;
 
 import de.uka.ipd.sdq.workflow.Workflow;
+import de.uka.ipd.sdq.workflow.jobs.SequentialBlackboardInteractingJob;
+import edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.application.jobs.AnalysisResultBlackboard;
 import edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.application.jobs.CaseStudyWorkflowBuilder;
 import tools.mdsd.library.standalone.initialization.emfprofiles.EMFProfileInitializationTask;
 import tools.mdsd.library.standalone.initialization.log4j.Log4jInitilizationTask;
@@ -184,6 +186,20 @@ public class PCSCaseStudyCLI implements IApplication {
                     .build();
                 var workflow = new Workflow(job);
                 workflow.run();
+                
+                if(job instanceof SequentialBlackboardInteractingJob) {
+                	var blackboard = ((SequentialBlackboardInteractingJob) job).getBlackboard();
+                	if(blackboard instanceof AnalysisResultBlackboard) {
+                		var board = ((AnalysisResultBlackboard)blackboard);
+                        for (var directory : board.getPartitionIds()) {
+                            var result = board.getPartition(directory);
+                            if(result.hasFoundViolations())
+                            	return 10;
+                        }
+                	}
+                }
+                	
+                
             } catch (Exception e) {
                 System.err.println("Error while running case study workflow: " + e.getLocalizedMessage());
                 return 2;
