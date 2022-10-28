@@ -210,7 +210,7 @@ public class PCSCaseStudyCLI implements IApplication {
     }
     
     private boolean checkFormat(String inputString) {
-    	var regex = "[\\p{javaLowerCase}\\p{javaUpperCase}]+:[\\p{javaLowerCase}\\p{javaUpperCase}\\p{Digit}]+";
+    	var regex = "[\\p{javaLowerCase}\\p{javaUpperCase}]+:[\\p{javaLowerCase}\\p{javaUpperCase}\\p{Digit},.]+";
     	return Pattern.matches(regex, inputString);
     }
 

@@ -36,7 +36,7 @@ import edu.kit.kastel.dsis.fluidtrust.casestudy.pcs.analysis.dto.CharacteristicV
 
 public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteractingJob<KeyValueMDSDBlackboard> {
 
-    private final ModelLocation usageModelLocation;
+	private final ModelLocation usageModelLocation;
 	private final ModelLocation allocationModelLocation;
 	private final String allCharacteristicsResultKey;
 	private final String violationResultKey;
@@ -71,14 +71,73 @@ public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteracti
 		var allCharacteristics = findAllCharacteristics(queryEngine, dataDictionaries);
 		getBlackboard().put(allCharacteristicsResultKey, allCharacteristics);
 		monitor.worked(1);
+		ActionBasedQueryResult detectedViolations = null;
+		switch (scenario) {
+		case "Dangerous":
+			detectedViolations = findViolationsDangerous(dataDictionaries, allCharacteristics);
+			break;
+		case "VirtualInspection":
+			detectedViolations = findViolationsDestination(dataDictionaries, allCharacteristics);
+			break;
+		default:
+			break;
+		}
 
-		var detectedViolations = findViolations(dataDictionaries, allCharacteristics);
 		getBlackboard().put(violationResultKey, detectedViolations);
 		monitor.worked(1);
 		monitor.done();
 	}
+	
+	private ActionBasedQueryResult findViolationsDangerous(List<PCMDataDictionary> dataDictionaries,
+			ActionBasedQueryResult allCharacteristics) throws JobFailedException {
+		var enumCharacteristicTypes = getAllEnumCharacteristicTypes(dataDictionaries);
+		var ctACObject = findByName(enumCharacteristicTypes, "DangerousType");
+//        var convertedPolicy = AccessControlPolicy.POLICY.keySet()
+//            .stream()
+//            .collect(Collectors.toMap(role -> ctAssignedRoles.getType()
+//                .getLiterals()
+//                .stream()
+//                .filter(l -> l.getName()
+//                    .equals(role.getName()))
+//                .findFirst().get(),
+//                    role -> AccessControlPolicy.POLICY.get(role)
+//                        .stream()
+//                        .map(obj -> ctACObject.getType().getLiterals().stream().filter(l -> l.getName().equals(obj.getName())).findFirst().get())
+//                        .collect(Collectors.toSet())));
 
-	private ActionBasedQueryResult findViolations(List<PCMDataDictionary> dataDictionaries,
+		var violations = new ActionBasedQueryResult();
+
+		for (var resultEntry : allCharacteristics.getResults().entrySet()) {
+			for (var queryResult : resultEntry.getValue()) {
+				if (!(queryResult.getElement().getElement() instanceof SetVariableAction)) {
+					continue;
+				}
+				var acObjects = queryResult.getDataCharacteristics().values().stream().flatMap(Collection::stream)
+						.filter(cv -> cv.getCharacteristicType() == ctACObject)
+						.map(CharacteristicValue::getCharacteristicLiteral).collect(Collectors.toList());
+				var action = (SetVariableAction) queryResult.getElement().getElement();
+
+				if (action.getEntityName().equals("virtualInspection")
+						&& acObjects.stream().anyMatch(e -> e.getName().equals("Dangerous"))
+						) {
+					violations.addResult(resultEntry.getKey(), queryResult);
+				}
+
+//                var accessibleAcObjects = assignedRoles.stream()
+//                    .map(convertedPolicy::get)
+//                    .flatMap(Collection::stream)
+//                    .collect(Collectors.toSet());
+//                if (!accessibleAcObjects.containsAll(acObjects)) {
+//                    violations.addResult(resultEntry.getKey(), queryResult);
+//                }
+
+			}
+		}
+
+		return violations;
+	}
+
+	private ActionBasedQueryResult findViolationsDestination(List<PCMDataDictionary> dataDictionaries,
 			ActionBasedQueryResult allCharacteristics) throws JobFailedException {
 		var enumCharacteristicTypes = getAllEnumCharacteristicTypes(dataDictionaries);
 		var ctACObject = findByName(enumCharacteristicTypes, "Destination");
@@ -108,13 +167,14 @@ public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteracti
 						.filter(cv -> cv.getCharacteristicType() == ctAssignedRoles)
 						.map(CharacteristicValue::getCharacteristicLiteral).collect(Collectors.toList());
 				var acObjects = queryResult.getDataCharacteristics().values().stream().flatMap(Collection::stream)
-						.filter(cv -> cv.getCharacteristicType() == ctACObject || cv.getCharacteristicType() == objects2)
+						.filter(cv -> cv.getCharacteristicType() == ctACObject
+								|| cv.getCharacteristicType() == objects2)
 						.map(CharacteristicValue::getCharacteristicLiteral).collect(Collectors.toList());
 				var action = (SetVariableAction) queryResult.getElement().getElement();
 
 				if (action.getEntityName().equals("virtualInspection")
-						&& acObjects.stream().anyMatch(e -> e.getName().equals("Columbia")) &&
-								acObjects.stream().anyMatch(e-> e.getName().equals("high"))) {
+						&& acObjects.stream().anyMatch(e -> e.getName().equals("Columbia"))
+						&& acObjects.stream().anyMatch(e -> e.getName().equals("high"))) {
 					violations.addResult(resultEntry.getKey(), queryResult);
 				}
 
@@ -203,21 +263,24 @@ public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteracti
 	private Literal findValue(EnumCharacteristicType enumeration, String value) {
 		switch (enumeration.getName()) {
 		case "IncidentRates":
-			var rate = Integer.parseInt(value);
-			if(rate < 10)
-				value ="low";
-			else if(rate < 100)
+			var rate = Double.parseDouble(value);
+			if (rate < 0.5)
+				value = "low";
+			else if (rate < 0.8)
 				value = "medium";
 			else
 				value = "high";
+			break;
+		case "con":
+			value = value;
 			break;
 
 		default:
 			break;
 		}
 		var literalValue = value;
-		return enumeration.getType().	
-				getLiterals().stream().filter(e -> e.getName().equals(literalValue)).findAny().get();
+		return enumeration.getType().getLiterals().stream().filter(e -> e.getName().equals(literalValue)).findAny()
+				.get();
 	}
 
 	@Override
