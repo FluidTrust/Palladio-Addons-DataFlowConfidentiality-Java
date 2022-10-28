@@ -63,7 +63,7 @@ public class CaseStudyWorkflowBuilder {
         }
 
         // add analysis result to CSV job
-        job.add(new SerializeResultsToCSVJob(resultFile));
+//        job.add(new SerializeResultsToCSVJob(resultFile));
         
         return job;
     }
