@@ -79,6 +79,9 @@ public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteracti
 		case "VirtualInspection":
 			detectedViolations = findViolationsDestination(dataDictionaries, allCharacteristics);
 			break;
+		case "Tax":
+			detectedViolations = findViolationsTax(dataDictionaries, allCharacteristics);
+			break;
 		default:
 			break;
 		}
@@ -92,18 +95,6 @@ public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteracti
 			ActionBasedQueryResult allCharacteristics) throws JobFailedException {
 		var enumCharacteristicTypes = getAllEnumCharacteristicTypes(dataDictionaries);
 		var ctACObject = findByName(enumCharacteristicTypes, "DangerousType");
-//        var convertedPolicy = AccessControlPolicy.POLICY.keySet()
-//            .stream()
-//            .collect(Collectors.toMap(role -> ctAssignedRoles.getType()
-//                .getLiterals()
-//                .stream()
-//                .filter(l -> l.getName()
-//                    .equals(role.getName()))
-//                .findFirst().get(),
-//                    role -> AccessControlPolicy.POLICY.get(role)
-//                        .stream()
-//                        .map(obj -> ctACObject.getType().getLiterals().stream().filter(l -> l.getName().equals(obj.getName())).findFirst().get())
-//                        .collect(Collectors.toSet())));
 
 		var violations = new ActionBasedQueryResult();
 
@@ -123,20 +114,39 @@ public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteracti
 					violations.addResult(resultEntry.getKey(), queryResult);
 				}
 
-//                var accessibleAcObjects = assignedRoles.stream()
-//                    .map(convertedPolicy::get)
-//                    .flatMap(Collection::stream)
-//                    .collect(Collectors.toSet());
-//                if (!accessibleAcObjects.containsAll(acObjects)) {
-//                    violations.addResult(resultEntry.getKey(), queryResult);
-//                }
-
 			}
 		}
 
 		return violations;
 	}
+	private ActionBasedQueryResult findViolationsTax(List<PCMDataDictionary> dataDictionaries,
+			ActionBasedQueryResult allCharacteristics) throws JobFailedException {
+		var enumCharacteristicTypes = getAllEnumCharacteristicTypes(dataDictionaries);
+		var ctACObject = findByName(enumCharacteristicTypes, "TaxDifferation");
 
+		var violations = new ActionBasedQueryResult();
+
+		for (var resultEntry : allCharacteristics.getResults().entrySet()) {
+			for (var queryResult : resultEntry.getValue()) {
+				if (!(queryResult.getElement().getElement() instanceof SetVariableAction)) {
+					continue;
+				}
+				var acObjects = queryResult.getDataCharacteristics().values().stream().flatMap(Collection::stream)
+						.filter(cv -> cv.getCharacteristicType() == ctACObject)
+						.map(CharacteristicValue::getCharacteristicLiteral).collect(Collectors.toList());
+				var action = (SetVariableAction) queryResult.getElement().getElement();
+
+				if (action.getEntityName().equals("TaxAction")
+						&& acObjects.stream().anyMatch(e -> e.getName().equals("high"))
+						) {
+					violations.addResult(resultEntry.getKey(), queryResult);
+				}
+			}
+		}
+
+		return violations;
+	}
+	
 	private ActionBasedQueryResult findViolationsDestination(List<PCMDataDictionary> dataDictionaries,
 			ActionBasedQueryResult allCharacteristics) throws JobFailedException {
 		var enumCharacteristicTypes = getAllEnumCharacteristicTypes(dataDictionaries);
@@ -274,7 +284,14 @@ public class RunJavaBasedDestinationAnalysis extends AbstractBlackboardInteracti
 		case "con":
 			value = value;
 			break;
-
+		case "TaxDifferation":
+			var taxRate = Double.parseDouble(value);
+			if (taxRate < 0.1)
+				value = "low";
+			else if (taxRate < 0.2)
+				value = "medium";
+			else
+				value = "high";
 		default:
 			break;
 		}
